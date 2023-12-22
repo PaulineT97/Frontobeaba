@@ -70,7 +70,8 @@ export async function signin(values) {
 
 export async function getConnectedUser() {
     const response = await fetch(`${API_USERS}/userConnected`, {
-        credentials: "include"
+        credentials: "include",
+        mode: "no-cors"
     });
     const user = await response.json();
     return user;
