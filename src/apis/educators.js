@@ -1,4 +1,4 @@
-const API_EDUC = "https://backobeaba-2qxmcv94a-paulinet97.vercel.app/api/educators";
+const API_EDUC = "https://backobeaba.vercel.app/api/educators";
 
 export async function fetchAllEducateurs() {
     try {

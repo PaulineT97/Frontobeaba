@@ -1,4 +1,4 @@
-const API_ADMIN = "https://backobeaba-2qxmcv94a-paulinet97.vercel.app/api/admin";
+const API_ADMIN = "https://backobeaba.vercel.app/api/admin";
 
 //NOTE - gestion des EDUCATEURS 
 

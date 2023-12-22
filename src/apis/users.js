@@ -1,4 +1,4 @@
-const API_USERS = "https://backobeaba-2qxmcv94a-paulinet97.vercel.app/api/users";
+const API_USERS = "https://backobeaba.vercel.app/api/users";
 
 
 export async function createUser(newUser) {
