@@ -1,4 +1,4 @@
-const API_DOGS = "/api/dogs";
+const API_DOGS = "https://backobeaba-2qxmcv94a-paulinet97.vercel.app/api/dogs";
 
 export async function addDogs(newDog) {
     console.log("Sending request to add a dog:", newDog);
