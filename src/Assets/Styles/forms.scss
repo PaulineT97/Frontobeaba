@@ -1,0 +1,98 @@
+form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 90%;
+
+    .oneInput {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 2%;
+
+        label {
+            margin-bottom: .5%;
+        }
+
+        input,
+        textarea {
+            background-color: var(--clair);
+            border: none;
+            border-radius: .5rem;
+        }
+    }
+
+    .cgu {
+        display: flex;
+        align-items: center;
+        margin: 7% 3% 3% 0;
+
+        label {
+            margin-left: 3%;
+            font-size: 1rem;
+        }
+    }
+
+    .enteteActivity {
+        display: flex;
+        align-items: center;
+
+        span {
+            font-family: var(--satisfy);
+            font-size: 2rem;
+            margin-right: 3%;
+        }
+        button {
+            padding: 10% 5% 0 15%;
+        }
+    }
+
+    .oneActivity {
+        display: flex;
+        width: 100%;
+        justify-content: space-around;
+        margin: 1% 0;
+
+        select {
+            width: 25%;
+        }
+
+        button {
+            padding: 3% 15%;
+        }
+    }
+
+    .motif {
+        width: 100%;
+        height: 8rem;
+    }
+
+    .send {
+        margin-top: 7%;
+    }
+
+    .add {
+        display: flex;
+        justify-content: center;
+
+        span {
+            font-size: 1.6rem;
+            margin-right: 3%;
+        }
+
+        .btn {
+            padding: .4rem 1rem 0;
+        }
+    }
+}
+
+.feedback {
+    color: indianred;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.feedbackGood {
+    color: seagreen;
+    font-size: 18px;
+    font-weight: 600;
+}

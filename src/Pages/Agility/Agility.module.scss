@@ -1,0 +1,39 @@
+@use "../../Assets//Styles/mixin.scss" as mixin;
+.banniere {
+    width: 100%;
+    height: 80vh;
+    background-position:center;
+    background-size:cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @include mixin.md-lt {
+        height: 70vh;
+    }
+    @include mixin.sm-md {
+        height: 70vh;
+    }
+    @include mixin.tablette {
+        height: 70vh;
+    }
+    @include mixin.xs-sm {
+        height: 30vh;
+    }
+
+    h1 {
+        position: relative;
+        z-index: 0;
+    }
+}
+
+.mainAgi{
+    section{
+        width: 80%;
+        .levelChoice{
+            width: 100%;
+            display: flex;
+            justify-content: space-evenly;
+            margin: 3% 0;
+        }
+    }
+}
