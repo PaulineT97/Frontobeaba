@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import styles from './EspaceAdmin.module.scss';
 import Button from '../../Components/button/Button';
-import { useFieldArray, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { fetchAllEducateurs } from '../../apis/educators';
 import { fetchCertifications, addCertification, addEducator, deleteEducBack } from '../../apis/admin';
+import Modal from "../../Components/Modal/Modal";
 
 export default function Educateurs() {
 
@@ -13,19 +14,24 @@ export default function Educateurs() {
 
     const [educateurs, setEducateurs] = useState([]);
     const [certification, setCertification] = useState([]);
-    const [editingEducateurId, setEditingEducateurId] = useState(null);
+
     const [feedback, setFeedback] = useState("");
     const [feedbackGood, setFeedbackGood] = useState("");
+    const [feedbackAjout, setFeedbackAjout] = useState("");
+    const [feedbackGoodAjout, setFeedbackGoodAjout] = useState("");
     const [modify, setModify] = useState(false);
+    const [editingEducateurId, setEditingEducateurId] = useState(null);
     const [addAnEduc, setAddAnEduc] = useState(false);
     // useState pour l'input de type file
     const [selectedPhoto, setSelectedPhoto] = useState(null);
     // useState pour l'attribut src de notre balise img
     const [previewImage, setPreviewImage] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+
 
     const yupSchema = yup.object({
         prenom: yup.string().required(" champ obligatoire").min(2, "le champ doit contenir 2 caractères minimum").max(12, "le champ doit contenir 12 caractères maximum"),
-        certification: yup.string().required(" champ obligatoire"),
+        certification: yup.number().required(" champ obligatoire"),
         présentation: yup.string().required(" champ obligatoire"),
         photo: yup.mixed().test('fileType', 'Seuls les fichiers de type image sont autorisés', (value) => {
             if (!value) return true;  // La validation n'est pas requise si le champ est vide
@@ -53,12 +59,18 @@ export default function Educateurs() {
 
     //ANCHOR - Fonctions 
 
+    function showModal(educId) {
+        console.log(educId);
+        setModalVisible(!modalVisible);
+        setEditingEducateurId(educId);
+    }
     //NOTE -- cette fonction permet de récupérer toutes les informations nécessaires à l'affichage des éducateurs
     useEffect(() => {
         async function fetchData() {
             try {
                 const dataBack = await fetchAllEducateurs();
                 setEducateurs(dataBack);
+                console.log(dataBack);
             } catch (error) {
                 console.error('Error in component:', error);
             }
@@ -67,6 +79,7 @@ export default function Educateurs() {
 
         fetchData();
     }, []);
+
 
     async function getCertifications() {
         try {
@@ -87,20 +100,9 @@ export default function Educateurs() {
     }
 
     // déclaration de la fonction lors d'un changement de fichier dans l'input avant validation
-    function handlePhotoChange(event) {
-        // récupération du fichier
+    function getPhoto(event) {
         const file = event.target.files[0];
         setSelectedPhoto(file);
-        // on place une condition pour l'attribuer à l'attribut src de la balise img ou non
-        if (file) {
-            const fileReader = new FileReader();
-            fileReader.readAsDataURL(file);
-            fileReader.onload = () => {
-                setPreviewImage(fileReader.result);
-            };
-        } else {
-            setPreviewImage(null);
-        }
     }
 
     // déclaration de la fonction qui récupére un obket blob, le lit et le convertir en
@@ -114,6 +116,7 @@ export default function Educateurs() {
             fileReader.onload = () => {
                 resolve(fileReader.result);
             };
+            console.log(`voici log du blob apres fonction convert to base64 : ${blob}`);
             fileReader.onerror = (error) => {
                 reject(error);
             };
@@ -127,36 +130,47 @@ export default function Educateurs() {
         values.idEduc = educateurId;
 
         try {
-            console.log(`educateur is now : ${values} `);
+            // console.log(`educateur is now : ${values} `);
 
-            console.log("Before addCertification:", values.certification);
-const newCertification = await addCertification(values);
-console.log("After addCertification:", values.certification);
+            const newCertification = await addCertification(values);
 
 
             if (newCertification.message) {
-                setFeedback(newCertification.message);
+                setFeedback({ [educateurId]: newCertification.message });
+
+            } else {
+
                 setEducateurs(prevEducateurs => {
-                    console.log("prevEducateurs:", prevEducateurs);
+
                     const updatedEducateurs = prevEducateurs.map(educateur => {
                         if (educateur.id === educateurId) {
-                            const newCertif =  values.certification;
-                            console.log("New certification:", newCertif);
+                            // const newCertif = values.certification;
+
+                            const selectedCertification = certification.find(c => c.idCertification === parseInt(values.certification, 10));
+
+                            // console.log("Selected certification:", selectedCertification);
+
+                            const certificationName = selectedCertification ? selectedCertification.nameCertification : '';
+
+                            // console.log("Certification name:", certificationName);
+
                             return {
                                 ...educateur,
-                                certification: newCertif
+                                certification: certificationName
                             };
                         }
                         return educateur;
                     });
-                    console.log("updatedEducateurs:", updatedEducateurs);
+
+                    // console.log("updatedEducateurs:", updatedEducateurs);
+
                     return updatedEducateurs;
                 });
-            } else {
-                setFeedbackGood(newCertification.messageGood);
+
+                setFeedbackGood({ [educateurId]: newCertification.messageGood });
                 setTimeout(() => {
                     setModify(false);
-                    setFeedbackGood("");
+                    setFeedbackGood({ [educateurId]: "" });
                 }, 2000);
             }
         } catch (error) {
@@ -168,53 +182,73 @@ console.log("After addCertification:", values.certification);
         setFeedback("");
         clearErrors();
 
-        //ANCHOR - partie qui concerne la PHOTO
-        // event.preventDefault();
         if (!selectedPhoto) {
-            alert("Veuillez sélectionner un fichier");
+            setFeedbackAjout("Veuillez sélectionner un fichier");
             return;
         }
-        // FileReader permet de lire les fichiers de type File ou Blob
+
         const fileReader = new FileReader();
         fileReader.readAsArrayBuffer(selectedPhoto);
+
         fileReader.onload = async () => {
-            // récupération du fichier lu
             const buffer = fileReader.result;
-            // création un objet blob à partir du fichier lu et du type de fichier
             const blob = new Blob([buffer], { type: selectedPhoto.type });
-            console.log(selectedPhoto);
 
-            // invocation de la fonction en passant en paramètre l'objet blob
+            // Convertir le Blob en base64
             const base64 = await convertBlobTobase64(blob);
-            console.log({ base64 });
 
-            // création d'un objet avec blob et idUser
-            const obj = { value: base64 };
-
-
-            //ANCHOR - suite
             const values = getValues();
-            values.photo = obj.value;
+            values.photo = base64; // Utilisez la représentation base64 pour la propriété 'photo'
 
             try {
-                console.log(values);
                 const newEducator = await addEducator(values);
 
                 if (newEducator.message) {
                     setFeedback(newEducator.message);
                 } else {
-                    setFeedbackGood(newEducator.messageGood);
-                    console.log("Nouvel éducateur ajouté :", newEducator.nouveauEducateur);
+                    if (newEducator.newEduc && newEducator.newEduc.length > 0) {
+                        const nouvelEducateur = newEducator.newEduc[0];
+                        setFeedbackGoodAjout(newEducator.messageGood);
 
-                    setTimeout(() => {
-                        setAddAnEduc(false);
-                        setFeedbackGood("");
-                    }, 2000);
+                        // Utilisez la propriété 'photo' de nouvel éducateur pour afficher l'image
+                        const photoEduc = nouvelEducateur.photo;
+
+                        console.log({ photoEduc });
+                        const uint8Array = new Uint8Array(photoEduc.data);
+                        console.log({ uint8Array });
+                        const blob = new Blob([uint8Array]);
+                        console.log({ blob });
+                        const urlImage = URL.createObjectURL(blob);
+                        console.log({ urlImage });
+                        fetch(urlImage)
+                            .then((response) => response.text())
+                            .then((text) => {
+                                console.log({ text });
+                                setPreviewImage(text);
+                            });
+
+                        // Mettez à jour l'état des éducateurs en ajoutant le nouvel éducateur à la liste existante
+                        setEducateurs(prevEducateurs => [
+                            {
+                                ...nouvelEducateur,
+                                certification: nouvelEducateur.nameCertification,
+                                photo: previewImage
+                            },
+                            ...prevEducateurs
+                        ]);
+
+                        setTimeout(() => {
+                            setAddAnEduc(false);
+                            setFeedbackGoodAjout("");
+                        }, 2000);
+                    } else {
+                        console.error("Erreur lors de l'ajout de l'éducateur. Nouvel éducateur non défini.");
+                    }
                 }
             } catch (error) {
                 console.error(error);
             }
-        }
+        };
     }
 
     async function deleteEducateur(educateurId) {
@@ -226,15 +260,15 @@ console.log("After addCertification:", values.certification);
             // Envoyer une requête de suppression à votre API
 
             if (educateurDeleted.messageGood) {
-                setFeedbackGood(educateurDeleted.messageGood);
+                setFeedbackGood({ [educateurId]: educateurDeleted.messageGood });
 
                 setTimeout(() => {
                     const updatedEducateurs = educateurs.filter(e => e.id !== educateurId);
                     setEducateurs(updatedEducateurs);
-                    setFeedbackGood("");
+                    setFeedbackGood({ [educateurId]: "" });
                 }, 3000);
             } else {
-                setFeedback("Erreur lors de la suppression de l'éducateur.");
+                setFeedback({ [educateurId]: "Erreur lors de la suppression de l'éducateur." });
             }
         } catch (error) {
             console.error('Erreur lors de la suppression de l\'éducateur:', error);
@@ -243,16 +277,16 @@ console.log("After addCertification:", values.certification);
 
     return (
         <>
-            <h3>Les éducateurs</h3>
+            <h2>Les éducateurs</h2>
 
             <article>
                 {educateurs.map((e, index) => (
-                    <div className={`box ${styles.container}`} id={e.id} key={e.id}>
+                    <div className={`box ${styles.containerBox}`} id={e.id} key={index}>
                         <div className={styles.left}>
-                            <img src={e.photo} alt="" />
+                            <img src={e.photo || previewImage} alt="" />
                         </div>
                         <div className={styles.right}>
-                            <h4>{e.nom}</h4>
+                            <h3>{e.nom}</h3>
                             {modify && editingEducateurId === e.id ? (
                                 <>
                                     <form onSubmit={handleSubmit(() => SubmitChangement(e.id))}>
@@ -273,9 +307,9 @@ console.log("After addCertification:", values.certification);
 
                                         {/* --- --- --- --- ---> F E E D B A C K <--- --- --- --- --- */}
 
-                                        {feedback && <p className={`mb10 mt20 feedback`}>{feedback}</p>}
+                                        {feedback[e.id] && <p className={`feedback`}>{feedback[e.id]}</p>}
 
-                                        {feedbackGood && <p className={`mb10 mt20 feedbackGood`}>{feedbackGood}</p>}
+                                        {feedbackGood[e.id] && <p className={`feedbackGood`}>{feedbackGood[e.id]}</p>}
 
 
                                         <div className={styles.options}>
@@ -289,17 +323,24 @@ console.log("After addCertification:", values.certification);
                                     <p className={styles.certif}>{e.certification}</p>
                                     <p>{e.introduction}</p>
 
-                                    
-                                        {/* --- --- --- --- ---> F E E D B A C K <--- --- --- --- --- */}
 
-                                        {feedback && <p className={`mb10 mt20 feedback`}>{feedback}</p>}
+                                    {/* --- --- --- --- ---> F E E D B A C K <--- --- --- --- --- */}
 
-                                        {feedbackGood && <p className={`mb10 mt20 feedbackGood`}>{feedbackGood}</p>}
+                                    {feedback[e.id] && <p className={`feedback`}>{feedback[e.id]}</p>}
+
+                                    {feedbackGood[e.id] && <p className={`feedbackGood`}>{feedbackGood[e.id]}</p>}
 
                                     <div className={styles.options}>
                                         <Button content='Modifier la certification' onClick={() => modifyOnClick(e.id)} />
-                                        <button className="btn" onClick={() => deleteEducateur(e.id)}>Supprimer l'éducateur</button>
+                                        <button className="btn" onClick={() => showModal(e.id)}>Supprimer l'éducateur</button>
                                     </div>
+                                    {
+                                        modalVisible && editingEducateurId == e.id &&
+                                        <Modal message={`Vous allez supprimer ${e.nom} de la liste des éducateurs. Souhaitez vous continuer ?`}
+                                            onCancel={() => showModal(e.id)}
+                                            onConfirm={() => deleteEducateur(e.id)} 
+                                        />
+                                    }
                                 </>
                             )}
                         </div>
@@ -313,13 +354,13 @@ console.log("After addCertification:", values.certification);
                 {addAnEduc ? (
 
                     <form onSubmit={handleSubmit(submit)} style={{ width: '100%' }}>
-                        <div className={`box ${styles.container}`}>
+                        <div className={`box ${styles.containerBox}`}>
 
                             <div className={styles.left}>
                                 {/* --- --- --- --- ---> I N P U T . P H O T O . A V E C . L A B E L <--- --- --- --- --- */}
                                 <label>
                                     <span>Choisissez une photo : </span>
-                                    <input {...register("photo")} type="file" onChange={handlePhotoChange} />
+                                    <input {...register("photo")} type="file" onChange={getPhoto} />
                                 </label>
                             </div>
 
@@ -363,9 +404,9 @@ console.log("After addCertification:", values.certification);
 
                                 {/* --- --- --- --- ---> F E E D B A C K <--- --- --- --- --- */}
 
-                                {feedback && <p className={`mb10 mt20 feedback`}>{feedback}</p>}
+                                {feedbackAjout && <p className={`feedback`}>{feedbackAjout}</p>}
 
-                                {feedbackGood && <p className={`mb10 mt20 feedbackGood`}>{feedbackGood}</p>}
+                                {feedbackGoodAjout && <p className={`feedbackGood`}>{feedbackGoodAjout}</p>}
 
                                 {/* --- --- --- --- ---> B U T T O N S  <--- --- --- --- --- */}
                                 <div className={styles.options}>

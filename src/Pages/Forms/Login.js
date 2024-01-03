@@ -37,24 +37,33 @@ export default function Login() {
     // --- --- --- --- --->   fonction button   <--- --- --- --- --- //
 
     async function submit(values) {
-        setFeedback("");
-
         try {
             clearErrors();
             const userBack = await login(values);
             console.log("this is the user back", userBack);
-
-            setFeedbackGood("Connexion réussie, vous allez être redirigés");
+    
+            if (userBack.adherent.admin) {
+                setFeedbackGood("Connexion réussie en tant qu'administrateur, vous allez être redirigés.");
+            } else {
+                setFeedback("Connexion réussie, vous allez être redirigés.");
+            }
+    
             reset(defaultValues);
+    
             setTimeout(() => {
                 userBack.adherent.admin ? navigate("/Admin") : navigate("/Profile");
-            },
-                2000);
-
+            }, 2000);
+    
         } catch (error) {
-            setError("generic", { type: "generic", message: error });
+            // Vérifier si l'erreur est due à un email ou un mot de passe incorrect
+            if (error === "Email et/ou mot de passe incorrects") {
+                setFeedback("Email ou mot de passe incorrects, réessayez.");
+            } else {
+                setError("generic", { type: "generic", message: error });
+            }
         }
     }
+    
 
     // --- --- --- --- --->   R E T U R N   <--- --- --- --- --- //
     return (
@@ -65,7 +74,7 @@ export default function Login() {
                 <input {...register("email")} type="text" id="email" />
 
                 {errors?.email && (
-                    <p style={{ color: "red" }}> {errors.email.message} </p>
+                    <p  className={`feedback`}> {errors.email.message} </p>
                 )}
             </div>
 
@@ -74,15 +83,15 @@ export default function Login() {
                 <input {...register("motdepasse")} type="password" id="motdepasse" />
 
                 {errors?.motdepasse && (
-                    <p style={{ color: "red" }}> {errors.motdepasse.message} </p>
+                    <p  className={`feedback`}> {errors.motdepasse.message} </p>
                 )}
             </div>
 
             <NavLink to="/NewPassword" title='mot de passe oublié ?' style={{ fontSize: '0.9rem', fontStyle: 'italic' }}> Mot de passe oublié ? </NavLink>
 
-            {feedback && <p className={`mb10 mt20 ${styles.feedback}`}>{feedback}</p>}
+            {feedback && <p className={`feedback`}>{feedback}</p>}
 
-            {feedbackGood && <p className={`mb10 mt20 ${styles.feedbackGood}`}>{feedbackGood}</p>}
+            {feedbackGood && <p className={`feedbackGood`}>{feedbackGood}</p>}
             <Button content="Voir mon profil" title="accéder à ma page de profil" className="send" />
         </form>
     )

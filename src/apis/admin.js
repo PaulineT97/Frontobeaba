@@ -144,3 +144,26 @@ export async function fetchAllDogs(){
         throw error;
     }
 }
+
+export async function changeLevel(values) {
+    console.log("Sending request to update:", values);
+    const response = await fetch(`${API_ADMIN}/updateLevel`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+    });
+    const backResponse = await response.json();
+    if (response.ok) {
+        console.log(backResponse);
+        return backResponse;
+    } else {
+        if (backResponse) {
+            throw backResponse;
+        } else {
+            console.error('Error API update Certification:');
+            throw new Error('Unexpected error');
+        }
+    }
+}

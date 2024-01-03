@@ -1,6 +1,5 @@
 const API_USERS = "https://backobeaba.vercel.app/api/users";
 
-
 export async function createUser(newUser) {
     console.log("Sending request to register:", newUser);
     const response = await fetch(`${API_USERS}/register`, {
@@ -27,7 +26,7 @@ export async function createUser(newUser) {
 export async function updateUser(actualUser) {
     console.log("Sending request to update:", actualUser);
     const response = await fetch(`${API_USERS}/update`, {
-        method: "POST",
+        method: "PATCH",
         headers: {
             "Content-Type": "application/json",
         },
@@ -49,7 +48,6 @@ export async function updateUser(actualUser) {
 
 export async function signin(values) {
     const response = await fetch(`${API_USERS}/login`, {
-        credentials: "include",
         method: "POST",
         headers: {
             "Content-Type": "application/json",
@@ -69,16 +67,13 @@ export async function signin(values) {
 }
 
 export async function getConnectedUser() {
-    const response = await fetch(`${API_USERS}/userConnected`, {
-        credentials: "include",
-    });
+    const response = await fetch(`${API_USERS}/userConnected`);
     const user = await response.json();
     return user;
 }
 
 export async function signout() {
     await fetch(`${API_USERS}/logout`, {
-        credentials: "include",
         method: "DELETE",
     })
 }
